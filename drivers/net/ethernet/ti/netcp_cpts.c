@@ -469,7 +469,7 @@ static int cpts_ts_comp_add_reload(struct cpts *cpts, s64 add_ns, int enable)
 			/* report the event */
 			ns = cpts_tstamp_cyc2time(cpts, event->low);
 			pevent.type = PTP_CLOCK_PPSUSR;
-			pevent.pps_times.ts_real = ns_to_timespec(ns);
+			pevent.pps_times.ts_real = ns_to_timespec64(ns);
 			ptp_clock_event(cpts->clock, &pevent);
 			reported = 1;
 
@@ -511,7 +511,7 @@ static int cpts_ts_comp_hw_ts_ev_report_restart(struct cpts *cpts)
 			/* report the event */
 			ns = cpts_tstamp_cyc2time(cpts, event->low);
 			pevent.type = PTP_CLOCK_PPSUSR;
-			pevent.pps_times.ts_real = ns_to_timespec(ns);
+			pevent.pps_times.ts_real = ns_to_timespec64(ns);
 			ptp_clock_event(cpts->clock, &pevent);
 			++reported;
 
