@@ -35,6 +35,7 @@
 
 #include "cpsw_ale.h"
 #include "netcp.h"
+#include "netcp_cpts.h"
 
 #define MAX_NUM_SERDES				2
 #define MAX_SLAVES				8
@@ -135,8 +136,14 @@ struct gbe_priv {
 	struct kobject			kobj;
 	struct kobject			tx_pri_kobj;
 	struct kobject			pvlan_kobj;
-	struct kobject			port_ts_kobj[MAX_SLAVES];
 	struct kobject			stats_kobj;
+	struct kobject			port_ts_kobj[MAX_SLAVES];
+	u32				cpts_rftclk_sel;
+	u32				cpts_clock_mult;
+	u32				cpts_clock_shift;
+	u32				cpts_clock_div;
+	int                             cpts_registered;
+	struct cpts			cpts;
 };
 
 struct gbe_slave {
@@ -153,6 +160,7 @@ struct gbe_slave {
 	u32				mac_control;
 	u8				phy_port_t;
 	struct device_node		*phy_node;
+	struct ts_ctl			ts_ctl;
 	struct list_head		slave_list;
 };
 

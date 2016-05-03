@@ -110,6 +110,79 @@ enum {
 #define CPTS_FIFO_DEPTH 16
 #define CPTS_MAX_EVENTS 32
 
+#ifdef CONFIG_TI_KEYSTONE_NETCP_CPTS
+/* Px_TS_CTL register fields */
+#define TS_RX_ANX_F_EN				BIT(0)
+#define TS_RX_VLAN_LT1_EN			BIT(1)
+#define TS_RX_VLAN_LT2_EN			BIT(2)
+#define TS_RX_ANX_D_EN				BIT(3)
+#define TS_TX_ANX_F_EN				BIT(4)
+#define TS_TX_VLAN_LT1_EN			BIT(5)
+#define TS_TX_VLAN_LT2_EN			BIT(6)
+#define TS_TX_ANX_D_EN				BIT(7)
+#define TS_LT2_EN				BIT(8)
+#define TS_RX_ANX_E_EN				BIT(9)
+#define TS_TX_ANX_E_EN				BIT(10)
+#define TS_MSG_TYPE_EN_SHIFT			16
+#define TS_MSG_TYPE_EN_MASK			0xffff
+
+/* Px_TS_SEQ_LTYPE register fields */
+#define TS_LTYPE1_SHIFT				0
+#define TS_LTYPE1_MASK				0xffff
+#define TS_SEQ_ID_OFS_SHIFT			16
+#define TS_SEQ_ID_OFS_MASK			0x3f
+
+/* Px_TS_VLAN_LTYPE register fields */
+#define TS_VLAN_LTYPE1_SHIFT			0
+#define TS_VLAN_LTYPE1_MASK			0xffff
+#define TS_VLAN_LTYPE2_SHIFT			16
+#define TS_VLAN_LTYPE2_MASK			0xffff
+
+/* Px_TS_CTL_LTYPE2 register fields */
+#define TS_LTYPE2_SHIFT				0
+#define TS_LTYPE2_MASK				0xffff
+#define TS_107					BIT(16)
+#define TS_129					BIT(17)
+#define TS_130					BIT(18)
+#define TS_131					BIT(19)
+#define TS_132					BIT(20)
+#define TS_319					BIT(21)
+#define TS_320					BIT(22)
+#define TS_TTL_NONZERO				BIT(23)
+#define TS_UNI_EN				BIT(24)
+#define TS_UNI_EN_SHIFT				24
+
+/* Px_TS_CTL2 */
+#define TS_MCAST_TYPE_EN_SHIFT			0
+#define TS_MCAST_TYPE_EN_MASK			0xff
+#define TS_DOMAIN_OFFSET_SHIFT			16
+#define TS_DOMAIN_OFFSET_MASK			0x3f
+
+#define TS_TX_ANX_ALL_EN	 \
+	(TS_TX_ANX_D_EN	| TS_TX_ANX_E_EN | TS_TX_ANX_F_EN)
+
+#define TS_RX_ANX_ALL_EN	 \
+	(TS_RX_ANX_D_EN	| TS_RX_ANX_E_EN | TS_RX_ANX_F_EN)
+
+#define TS_CTL_DST_PORT				TS_319
+#define TS_CTL_DST_PORT_SHIFT			21
+
+#define TS_CTL_MADDR_ALL	\
+	(TS_107 | TS_129 | TS_130 | TS_131 | TS_132)
+
+#define TS_CTL_MADDR_SHIFT			16
+
+/* The PTP event messages - Sync, Delay_Req, Pdelay_Req, and Pdelay_Resp. */
+#define EVENT_MSG_BITS (BIT(0) | BIT(1) | BIT(2) | BIT(3))
+#endif /* CONFIG_TI_KEYSTONE_NETCP_CPTS */
+
+struct ts_ctl {
+	int	uni;
+	u8	dst_port_map;
+	u8	maddr_map;
+	u8	ts_mcast_type;
+};
+
 struct cpts_event {
 	struct list_head list;
 	unsigned long tmo;
