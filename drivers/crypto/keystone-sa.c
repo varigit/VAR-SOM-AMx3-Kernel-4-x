@@ -29,6 +29,7 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/dma-mapping.h>
+#include <linux/firmware.h>
 #include <linux/platform_device.h>
 #include <linux/soc/ti/knav_dma.h>
 #include <linux/soc/ti/knav_qmss.h>
@@ -573,6 +574,23 @@ static int keystone_crypto_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int sa_request_firmware(struct device *dev)
+{
+	const struct firmware *fw;
+	int	ret;
+
+	ret = request_firmware(&fw, "sa_mci.fw", dev);
+	if (ret < 0) {
+		dev_err(dev, "request_firmware failed\n");
+		return ret;
+	}
+
+	memcpy(&sa_mci_tbl, fw->data, fw->size);
+
+	release_firmware(fw);
+	return 0;
+}
+
 static int keystone_crypto_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -627,6 +645,10 @@ static int keystone_crypto_probe(struct platform_device *pdev)
 		dev_err(dev, "Failed to set DMA channels");
 		goto err;
 	}
+
+	ret = sa_request_firmware(dev);
+	if (ret < 0)
+		goto err;
 
 	dev_info(dev, "crypto accelerator enabled\n");
 	return 0;
