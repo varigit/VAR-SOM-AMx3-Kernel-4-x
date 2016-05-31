@@ -33,6 +33,9 @@
 #include <linux/platform_device.h>
 #include <linux/soc/ti/knav_dma.h>
 #include <linux/soc/ti/knav_qmss.h>
+
+#include <linux/hw_random.h>
+#include <linux/delay.h>
 #include <linux/soc/ti/knav_helpers.h>
 #include <crypto/des.h>
 #include "keystone-sa.h"
@@ -46,6 +49,13 @@ __ATTR(_name, _mode, _show, _store)
 	container_of(_attr, struct sa_kobj_attribute, attr)
 #define to_crypto_data_from_stats_obj(obj) \
 	container_of(obj, struct keystone_crypto_data, stats_kobj)
+
+/* Maximum size of RNG data available in one read */
+#define SA_MAX_RNG_DATA	8
+/* Maximum retries to get rng data */
+#define SA_MAX_RNG_DATA_RETRIES	5
+/* Delay between retries (in usecs) */
+#define SA_RNG_DATA_RETRY_DELAY	5
 
 #define OF_PROP_READ(type, node, prop, var) \
 	do { \
@@ -634,6 +644,127 @@ static void sa_delete_sysfs_entries(struct keystone_crypto_data *crypto)
 		kobject_del(&crypto->stats_kobj);
 }
 
+/* HW RNG functions */
+static int sa_rng_init(struct hwrng *rng)
+{
+	u32 value;
+	struct device *dev = (struct device *)rng->priv;
+	struct keystone_crypto_data *crypto = dev_get_drvdata(dev);
+	u32 startup_cycles, min_refill_cycles, max_refill_cycles, clk_div;
+
+	crypto->trng_regs = (struct sa_trng_regs *)((void *)crypto->regs +
+				SA_REG_MAP_TRNG_OFFSET);
+
+	startup_cycles = SA_TRNG_DEF_STARTUP_CYCLES;
+	min_refill_cycles = SA_TRNG_DEF_MIN_REFILL_CYCLES;
+	max_refill_cycles = SA_TRNG_DEF_MAX_REFILL_CYCLES;
+	clk_div = SA_TRNG_DEF_CLK_DIV_CYCLES;
+
+	/* Enable RNG module */
+	value = __raw_readl(&crypto->regs->mmr.CMD_STATUS);
+	value |= SA_CMD_STATUS_REG_TRNG_ENABLE;
+	__raw_writel(value, &crypto->regs->mmr.CMD_STATUS);
+
+	/* Configure RNG module */
+	__raw_writel(0, &crypto->trng_regs->TRNG_CONTROL); /* Disable RNG */
+	value = startup_cycles << SA_TRNG_CONTROL_REG_STARTUP_CYCLES_SHIFT;
+	__raw_writel(value, &crypto->trng_regs->TRNG_CONTROL);
+	value =
+	(min_refill_cycles << SA_TRNG_CONFIG_REG_MIN_REFILL_CYCLES_SHIFT) |
+	(max_refill_cycles << SA_TRNG_CONFIG_REG_MAX_REFILL_CYCLES_SHIFT) |
+	(clk_div << SA_TRNG_CONFIG_REG_SAMPLE_DIV_SHIFT);
+	__raw_writel(value, &crypto->trng_regs->TRNG_CONFIG);
+	/* Disable all interrupts from TRNG */
+	__raw_writel(0, &crypto->trng_regs->TRNG_INTMASK);
+	/* Enable RNG */
+	value = __raw_readl(&crypto->trng_regs->TRNG_CONTROL);
+	value |= SA_TRNG_CONTROL_REG_TRNG_ENABLE;
+	__raw_writel(value, &crypto->trng_regs->TRNG_CONTROL);
+
+	/* Initialize the TRNG access lock */
+	spin_lock_init(&crypto->trng_lock);
+
+	return 0;
+}
+
+void sa_rng_cleanup(struct hwrng *rng)
+{
+	u32 value;
+	struct device *dev = (struct device *)rng->priv;
+	struct keystone_crypto_data *crypto = dev_get_drvdata(dev);
+
+	/* Disable RNG */
+	__raw_writel(0, &crypto->trng_regs->TRNG_CONTROL);
+	value = __raw_readl(&crypto->regs->mmr.CMD_STATUS);
+	value &= ~SA_CMD_STATUS_REG_TRNG_ENABLE;
+	__raw_writel(value, &crypto->regs->mmr.CMD_STATUS);
+}
+
+static int sa_rng_read(struct hwrng *rng, void *data, size_t max, bool wait)
+{
+	u32 value;
+	u32 st_ready;
+	u32 rng_lo, rng_hi;
+	int retries = SA_MAX_RNG_DATA_RETRIES;
+	int data_sz = min_t(u32, max, SA_MAX_RNG_DATA);
+	struct device *dev = (struct device *)rng->priv;
+	struct keystone_crypto_data *crypto = dev_get_drvdata(dev);
+
+	do {
+		spin_lock(&crypto->trng_lock);
+		value = __raw_readl(&crypto->trng_regs->TRNG_STATUS);
+		st_ready = value & SA_TRNG_STATUS_REG_READY;
+		if (st_ready) {
+			/* Read random data */
+			rng_hi = __raw_readl(&crypto->trng_regs->TRNG_OUTPUT_H);
+			rng_lo = __raw_readl(&crypto->trng_regs->TRNG_OUTPUT_L);
+			/* Clear ready status */
+			__raw_writel(SA_TRNG_INTACK_REG_READY,
+				     &crypto->trng_regs->TRNG_INTACK);
+		}
+		spin_unlock(&crypto->trng_lock);
+		udelay(SA_RNG_DATA_RETRY_DELAY);
+	} while (wait && !st_ready && retries--);
+
+	if (!st_ready)
+		return -EAGAIN;
+
+	if (likely(data_sz > sizeof(rng_lo))) {
+		memcpy(data, &rng_lo, sizeof(rng_lo));
+		memcpy((data + sizeof(rng_lo)), &rng_hi,
+		       (data_sz - sizeof(rng_lo)));
+	} else {
+		memcpy(data, &rng_lo, data_sz);
+	}
+
+	return data_sz;
+}
+
+static int sa_register_rng(struct device *dev)
+{
+	struct keystone_crypto_data *crypto = dev_get_drvdata(dev);
+	int	ret;
+
+	crypto->rng.name = dev_driver_string(dev);
+	crypto->rng.init = sa_rng_init;
+	crypto->rng.cleanup = sa_rng_cleanup;
+	crypto->rng.read = sa_rng_read;
+	crypto->rng.priv = (unsigned long)dev;
+
+	ret = hwrng_register(&crypto->rng);
+	if (!ret)
+		crypto->rng_initialized = 1;
+
+	return ret;
+}
+
+static void sa_unregister_rng(struct device *dev)
+{
+	struct keystone_crypto_data *crypto = dev_get_drvdata(dev);
+
+	hwrng_unregister(&crypto->rng);
+}
+
 static int sa_read_dtb(struct device_node *node,
 		       struct keystone_crypto_data *dev_data)
 {
@@ -724,6 +855,9 @@ static int keystone_crypto_remove(struct platform_device *pdev)
 
 	/* un-register crypto algorithms */
 	sa_unregister_algos(&pdev->dev);
+	/* un-register HW RNG */
+	if (dev_data->rng_initialized)
+		sa_unregister_rng(&pdev->dev);
 
 	/* Delete SYSFS entries */
 	sa_delete_sysfs_entries(dev_data);
@@ -836,6 +970,13 @@ static int keystone_crypto_probe(struct platform_device *pdev)
 	ret = sa_create_sysfs_entries(dev_data);
 	if (ret)
 		goto err;
+
+	/* Register HW RNG support */
+	ret = sa_register_rng(dev);
+	if (ret) {
+		dev_err(dev, "Failed to register HW RNG");
+		goto err;
+	}
 
 	/* Register crypto algorithms */
 	sa_register_algos(dev);

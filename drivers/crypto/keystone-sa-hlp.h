@@ -22,8 +22,10 @@
 #include <linux/interrupt.h>
 #include <linux/soc/ti/knav_dma.h>
 #include <linux/skbuff.h>
+#include <linux/hw_random.h>
 #include <asm/aes_glue.h>
 #include <crypto/aes.h>
+
 #define AES_XCBC_DIGEST_SIZE	16
 
 /* Number of 32 bit words in EPIB  */
@@ -72,6 +74,20 @@ struct sa_mmr_regs {
 	u32 CTXCACH_MISSCNT;
 };
 
+/*
+ * Register Overlay Structure for TRNG module
+ */
+struct sa_trng_regs {
+	u32 TRNG_OUTPUT_L;
+	u32 TRNG_OUTPUT_H;
+	u32 TRNG_STATUS;
+	u32 TRNG_INTMASK;
+	u32 TRNG_INTACK;
+	u32 TRNG_CONTROL;
+	u32 TRNG_CONFIG;
+	u32 RSVD0[228];
+};
+
 struct sa_regs {
 	struct sa_mmr_regs mmr;
 };
@@ -97,6 +113,7 @@ struct keystone_crypto_data {
 	struct dma_pool		*sc_pool;
 	struct kmem_cache	*dma_req_ctx_cache;
 	struct sa_regs		*regs;
+	struct sa_trng_regs	*trng_regs;
 
 	void		*rx_chan;
 	void		*rx_fdq[KNAV_DMA_FDQ_PER_CHAN];
@@ -119,7 +136,11 @@ struct keystone_crypto_data {
 	u32		tx_pool_region_id;
 	void		*tx_pool;
 
+	struct hwrng	rng;
+	int		rng_initialized;
+
 	spinlock_t	scid_lock; /* lock for SC-ID allocation */
+	spinlock_t	trng_lock; /* reading random data from TRNG */
 
 	struct kobject	stats_kobj;
 	int		stats_fl;

@@ -262,6 +262,50 @@ typedef u8 SA_CTX_PE_PKT_TYPE_T;
 #define SA_SW_INFO_FLAG_TEAR	0x0002
 #define SA_SW_INFO_FLAG_NOPD	0x0004
 
+/*
+ * TRNG module definitions
+ */
+
+/* Offset to TRNG module in CP_ACE memory map */
+#define SA_REG_MAP_TRNG_OFFSET	0x24000
+
+/* TRNG enable control in CP_ACE */
+#define SA_CMD_STATUS_REG_TRNG_ENABLE	BIT(3)
+
+/* TRNG start control in TRNG module */
+#define SA_TRNG_CONTROL_REG_TRNG_ENABLE	BIT(10)
+
+/* Data ready indicator in STATUS register */
+#define SA_TRNG_STATUS_REG_READY BIT(0)
+
+/* Data ready clear control in INTACK register */
+#define SA_TRNG_INTACK_REG_READY BIT(0)
+
+/* Number of samples taken to gather entropy during startup.
+ * If value is 0, the number of samples is 2^24 else
+ * equals value times 2^8.
+ */
+#define SA_TRNG_DEF_STARTUP_CYCLES	0
+#define SA_TRNG_CONTROL_REG_STARTUP_CYCLES_SHIFT 16
+
+/* Minimum number of samples taken to regenerate entropy
+ * If value is 0, the number of samples is 2^24 else
+ * equals value times 2^6.
+ */
+#define SA_TRNG_DEF_MIN_REFILL_CYCLES	1
+#define SA_TRNG_CONFIG_REG_MIN_REFILL_CYCLES_SHIFT 0
+
+/* Maximum number of samples taken to regenerate entropy
+ * If value is 0, the number of samples is 2^24 else
+ * equals value times 2^8.
+ */
+#define SA_TRNG_DEF_MAX_REFILL_CYCLES	0
+#define SA_TRNG_CONFIG_REG_MAX_REFILL_CYCLES_SHIFT 16
+
+/* Number of CLK input cycles between samples */
+#define SA_TRNG_DEF_CLK_DIV_CYCLES	0
+#define SA_TRNG_CONFIG_REG_SAMPLE_DIV_SHIFT 8
+
 #define SA_CMD_ENCSS_EN		0x00000001
 #define SA_CMD_AUTHSS_EN	0x00000002
 #define SA_CMD_AIRSS_EN		0x00000004
