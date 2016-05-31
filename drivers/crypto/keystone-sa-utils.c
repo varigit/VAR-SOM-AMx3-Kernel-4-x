@@ -681,6 +681,7 @@ static int sa_tear_sc(struct sa_ctx_info *ctx,
 	return 0;
 
 err:
+	atomic_inc(&pdata->stats.sc_tear_dropped);
 	if (dma_ctx)
 		kmem_cache_free(pdata->dma_req_ctx_cache, dma_ctx);
 	return ret;
@@ -995,6 +996,7 @@ void sa_tx_completion_process(struct keystone_crypto_data *dev_data)
 			if (likely(ctx->pkt)) {
 				atomic_add(ctx->src_nents,
 					   &ctx->dev_data->tx_dma_desc_cnt);
+				atomic_inc(&ctx->dev_data->stats.tx_pkts);
 			}
 		}
 
@@ -1082,6 +1084,8 @@ aead_err:
 			kfree((void *)hwdesc[j]->pad[0]);
 		}
 	}
+
+	atomic_inc(&dev_data->stats.rx_pkts);
 }
 
 void sa_rx_completion_process(struct keystone_crypto_data *dev_data)
