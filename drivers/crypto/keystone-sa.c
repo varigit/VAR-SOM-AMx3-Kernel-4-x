@@ -34,6 +34,7 @@
 #include <linux/soc/ti/knav_dma.h>
 #include <linux/soc/ti/knav_qmss.h>
 #include <linux/soc/ti/knav_helpers.h>
+#include <crypto/des.h>
 #include "keystone-sa.h"
 #include "keystone-sa-hlp.h"
 
@@ -249,6 +250,9 @@ static void sa_rx_task(unsigned long data)
 	struct keystone_crypto_data *dev_data =
 		(struct keystone_crypto_data *)data;
 
+	sa_rx_completion_process(dev_data);
+
+	sa_rxpool_refill(dev_data);
 	knav_queue_enable_notify(dev_data->rx_compl_q);
 }
 
@@ -267,6 +271,7 @@ static void sa_tx_task(unsigned long data)
 	struct keystone_crypto_data *dev_data =
 		(struct keystone_crypto_data *)data;
 
+	sa_tx_completion_process(dev_data);
 	knav_queue_enable_notify(dev_data->tx_compl_q);
 }
 
@@ -561,6 +566,9 @@ static int keystone_crypto_remove(struct platform_device *pdev)
 	struct keystone_crypto_data *dev_data = platform_get_drvdata(pdev);
 	struct device *dev = &pdev->dev;
 
+	/* un-register crypto algorithms */
+	sa_unregister_algos(&pdev->dev);
+
 	/* Release DMA resources */
 	sa_free_resources(dev_data);
 	/* Kill tasklets */
@@ -596,6 +604,7 @@ static int keystone_crypto_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct device_node *node = pdev->dev.of_node;
 	struct keystone_crypto_data *dev_data;
+	u32 value;
 	int ret;
 
 	sa_ks2_dev = dev;
@@ -629,6 +638,16 @@ static int keystone_crypto_probe(struct platform_device *pdev)
 		goto err;
 	}
 
+	/* Enable the required sub-modules in SA */
+	value = __raw_readl(&dev_data->regs->mmr.CMD_STATUS);
+
+	value |= (SA_CMD_ENCSS_EN | SA_CMD_AUTHSS_EN |
+		  SA_CMD_CTXCACH_EN | SA_CMD_SA1_IN_EN |
+		  SA_CMD_SA0_IN_EN | SA_CMD_SA1_OUT_EN |
+		  SA_CMD_SA0_OUT_EN);
+
+	__raw_writel(value, &dev_data->regs->mmr.CMD_STATUS);
+
 	tasklet_init(&dev_data->rx_task, sa_rx_task,
 		     (unsigned long)dev_data);
 
@@ -645,6 +664,12 @@ static int keystone_crypto_probe(struct platform_device *pdev)
 		dev_err(dev, "Failed to set DMA channels");
 		goto err;
 	}
+
+	/* Initialize the SC-ID allocation lock */
+	spin_lock_init(&dev_data->scid_lock);
+
+	/* Register crypto algorithms */
+	sa_register_algos(dev);
 
 	ret = sa_request_firmware(dev);
 	if (ret < 0)
