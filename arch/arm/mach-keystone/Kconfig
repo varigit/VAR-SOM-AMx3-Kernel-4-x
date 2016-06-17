@@ -16,6 +16,7 @@ config ARCH_KEYSTONE
 	select PM_GENERIC_DOMAINS if PM
 	select OMAP_GPMC
 	select PINCTRL
+	select HAS_RAPIDIO
 	help
 	  Support for boards based on the Texas Instruments Keystone family of
 	  SoCs.
