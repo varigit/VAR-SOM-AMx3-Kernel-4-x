@@ -15,6 +15,7 @@ config ARCH_KEYSTONE
 	select KEYSTONE2_DMA_COHERENT
 	select PM_GENERIC_DOMAINS if PM
 	select PINCTRL
+	select HAS_RAPIDIO
 	help
 	  Support for boards based on the Texas Instruments Keystone family of
 	  SoCs.
