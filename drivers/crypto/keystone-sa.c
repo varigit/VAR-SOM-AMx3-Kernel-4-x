@@ -851,7 +851,6 @@ static void sa_free_mem(struct keystone_crypto_data *dev_data)
 static int keystone_crypto_remove(struct platform_device *pdev)
 {
 	struct keystone_crypto_data *dev_data = platform_get_drvdata(pdev);
-	struct device *dev = &pdev->dev;
 
 	/* un-register crypto algorithms */
 	sa_unregister_algos(&pdev->dev);
@@ -952,13 +951,15 @@ static int keystone_crypto_probe(struct platform_device *pdev)
 	atomic_set(&dev_data->stats.rx_pkts, 0);
 
 	/* Initialize memory pools used by the driver */
-	if (ret = sa_init_mem(dev_data)) {
+	ret = sa_init_mem(dev_data);
+	if (ret) {
 		dev_err(dev, "Failed to create dma pool");
 		goto err;
 	}
 
 	/* Setup DMA channels */
-	if (ret = sa_setup_dma(dev_data)) {
+	ret = sa_setup_dma(dev_data);
+	if (ret) {
 		dev_err(dev, "Failed to set DMA channels");
 		goto err;
 	}
