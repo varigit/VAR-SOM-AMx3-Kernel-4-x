@@ -2339,6 +2339,12 @@
 			clocks = <&l3_iclk_div>;
 			clock-names = "fck";
 		};
+
+		debugss: debugss {
+			compatible = "ti,dra7xx-debugss";
+			clocks = <&sys_clkin1>;
+			clock-names = "sysclockin1";
+		};
 	};
 
 	thermal_zones: thermal-zones {
