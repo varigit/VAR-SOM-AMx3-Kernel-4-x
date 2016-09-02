@@ -225,6 +225,7 @@ gbe_serdes0: phy@232a000 {
 		status		= "ok";
 		/*loopback;*/
 		reg		= <0>;
+		#phy-cells	= <0>;
 		control-rate	= <2>; /* quart */
 		rx-start	= <7 5>;
 		rx-force	= <1 1>;
@@ -234,6 +235,7 @@ gbe_serdes0: phy@232a000 {
 		status		= "ok";
 		/*loopback;*/
 		reg		= <1>;
+		#phy-cells	= <0>;
 		control-rate	= <2>; /* quart */
 		rx-start	= <7 5>;
 		rx-force	= <1 1>;
@@ -256,6 +258,7 @@ gbe_serdes1: phy@2320000 {
 	serdes1_lane0: lane@0 {
 		status		= "disabled";
 		/*loopback;*/
+		#phy-cells	= <0>;
 		reg		= <0>;
 		control-rate	= <2>; /* quart */
 		rx-start	= <7 5>;
@@ -266,6 +269,7 @@ gbe_serdes1: phy@2320000 {
 		status		= "disabled";
 		/*loopback;*/
 		reg		= <1>;
+		#phy-cells	= <0>;
 		control-rate	= <2>; /* quart */
 		rx-start	= <7 5>;
 		rx-force	= <1 1>;
