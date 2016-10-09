@@ -434,7 +434,7 @@
 		/* Touchscreen irq GPIO. */
 		edt_ft5x06_pins: pinmux_edt_pins {
 			pinctrl-single,pins = <
-				0x154 (PIN_INPUT_PULLUP | MUX_MODE7)	/* spi0_d0.gpio0_3, INPUT | MODE7 */
+				0x154 (PIN_INPUT | MUX_MODE7)	/* spi0_d0.gpio0_3, INPUT | MODE7 */
 			>;
 		};
 
@@ -599,9 +599,6 @@
 		reg = <0x38>;
 		interrupt-parent = <&gpio0>;
 		interrupts = <3 IRQ_TYPE_NONE>;
-
-		touchscreen-size-x = <800>;
-		touchscreen-size-y = <480>;
 	};
 	
 };
@@ -703,23 +700,7 @@
 		};
 		partition@9 {
 			label = "NAND.file-system";
-			reg = <0x00A00000 0x0F600000>;
-		};
-		partition@10 {
-			label = "Android NAND.u-boot";
-			reg = <0x00080000 0x00260000>;
-		};
-		partition@11 {
-			label = "Android NAND.u-boot-env";
-			reg = <0x000000260000 0x000000280000>;
-		};
-		partition@12 {
-			label = "Android Kernel";
-			reg = <0x000000280000 0x000000780000>;
-		};
-		partition@13 {
-			label = "Android File System";
-			reg = <0x000000780000 0x000010000000>;
+			reg = <0x00A00000 0xffffffff>;
 		};
 	};
 };
@@ -898,6 +879,7 @@
 		ti,x-plate-resistance = <180>;
 		ti,coordinate-readouts = <5>;
 		ti,wire-config = <0x00 0x21 0x12 0x33>;
+		ti,charge-delay = <0x700>;
 		ti,alt_pins_conf;
 	};
 
