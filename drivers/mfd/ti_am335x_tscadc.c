@@ -128,7 +128,8 @@ static void tscadc_idle_config(struct ti_tscadc_dev *config)
 	unsigned int idleconfig;
 
 	idleconfig = STEPCONFIG_YNN | STEPCONFIG_INM_ADCREFM |
-			STEPCONFIG_INP_ADCREFM | STEPCONFIG_YPN;
+			STEPCONFIG_INP_ADCREFM |
+			(config->alt_pins_conf ? STEPCONFIG_XNN : STEPCONFIG_YPN);
 
 	tscadc_writel(config, REG_IDLECONFIG, idleconfig);
 }
@@ -147,6 +148,7 @@ static	int ti_tscadc_probe(struct platform_device *pdev)
 	int			clock_rate;
 	int			tsc_wires = 0, adc_channels = 0, total_channels;
 	int			readouts = 0;
+	bool		alt_pins_conf = false;
 
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "Could not find valid DT data.\n");
@@ -156,6 +158,9 @@ static	int ti_tscadc_probe(struct platform_device *pdev)
 	node = of_get_child_by_name(pdev->dev.of_node, "tsc");
 	of_property_read_u32(node, "ti,wires", &tsc_wires);
 	of_property_read_u32(node, "ti,coordiante-readouts", &readouts);
+	alt_pins_conf = of_property_read_bool(node, "ti,alt_pins_conf");
+	if (alt_pins_conf)
+		dev_warn(&pdev->dev, "using alternate pins configuration\n");
 
 	node = of_get_child_by_name(pdev->dev.of_node, "adc");
 	of_property_for_each_u32(node, "ti,adc-channels", prop, cur, val) {
@@ -259,6 +264,7 @@ static	int ti_tscadc_probe(struct platform_device *pdev)
 	tscadc->used_cells = 0;
 	tscadc->tsc_cell = -1;
 	tscadc->adc_cell = -1;
+	tscadc->alt_pins_conf = alt_pins_conf;
 
 	/* TSC Cell */
 	if (tsc_wires > 0) {

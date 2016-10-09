@@ -35,7 +35,7 @@
 #define SEQ_SETTLE		275
 #define MAX_12BIT		((1 << 12) - 1)
 
-static const int config_pins[] = {
+static int config_pins[] = {
 	STEPCONFIG_XPP,
 	STEPCONFIG_XNN,
 	STEPCONFIG_YPP,
@@ -55,6 +55,8 @@ struct titsc {
 	u32			inp_xp, inp_xn, inp_yp, inp_yn;
 	u32			step_mask;
 	u32			charge_delay;
+	u32			prev_x, prev_y, prev_z;
+	bool		event_pending;
 };
 
 static unsigned int titsc_readl(struct titsc *ts, unsigned int reg)
@@ -73,6 +75,13 @@ static int titsc_config_wires(struct titsc *ts_dev)
 	u32 analog_line[4];
 	u32 wire_order[4];
 	int i, bit_cfg;
+
+	if (ts_dev->mfd_tscadc->alt_pins_conf) {
+		config_pins[0] = STEPCONFIG_XPP;
+		config_pins[1] = STEPCONFIG_YPN;
+		config_pins[2] = STEPCONFIG_XNP;
+		config_pins[3] = STEPCONFIG_YNN;
+	}
 
 	for (i = 0; i < 4; i++) {
 		/*
@@ -282,6 +291,7 @@ static irqreturn_t titsc_irq(int irq, void *dev)
 		fsm = titsc_readl(ts_dev, REG_ADCFSM);
 		if (fsm == ADCFSM_STEPID) {
 			ts_dev->pen_down = false;
+			ts_dev->event_pending = false;
 			input_report_key(input_dev, BTN_TOUCH, 0);
 			input_report_abs(input_dev, ABS_PRESSURE, 0);
 			input_sync(input_dev);
@@ -303,6 +313,16 @@ static irqreturn_t titsc_irq(int irq, void *dev)
 
 		titsc_read_coordinates(ts_dev, &x, &y, &z1, &z2);
 
+		if (x == MAX_12BIT) {
+			if (ts_dev->event_pending) {
+				input_report_key(input_dev, BTN_TOUCH, 0);
+				input_report_abs(input_dev, ABS_PRESSURE, 0);
+				input_sync(input_dev);
+			}
+			ts_dev->event_pending = false;
+			ts_dev->pen_down = false;
+		}
+
 		if (ts_dev->pen_down && z1 != 0 && z2 != 0) {
 			/*
 			 * Calculate pressure using formula
@@ -315,15 +335,37 @@ static irqreturn_t titsc_irq(int irq, void *dev)
 			z /= z2;
 			z = (z + 2047) >> 12;
 
-			if (z <= MAX_12BIT) {
-				input_report_abs(input_dev, ABS_X, x);
-				input_report_abs(input_dev, ABS_Y, y);
-				input_report_abs(input_dev, ABS_PRESSURE, z);
-				input_report_key(input_dev, BTN_TOUCH, 1);
-				input_sync(input_dev);
-			}
+/*
+Frequently when a pen up event is detected the previous pen down event
+would be incorrect. From a userspace perspective you will see an abnormal
+jump when comparing the pen down events to the one right before the pen up
+event.
+
+To avoid this issue delay sending a pen down event until the next touch
+event has occurred. If the current touch event is not a pen up event then
+send the previously detected pen down values. If the current touch event is
+a pen up then simply ignore the previous pen down value.
+*/
+
+			if (ts_dev->prev_z < MAX_12BIT && ts_dev->event_pending) {
+				input_report_abs(input_dev, ABS_X, ts_dev->prev_x);
+				input_report_abs(input_dev, ABS_Y, ts_dev->prev_y);
+				input_report_abs(input_dev, ABS_PRESSURE, ts_dev->prev_z);
+ 				input_report_key(input_dev, BTN_TOUCH, 1);
+ 				input_sync(input_dev);
+ 			}
+
+			ts_dev->prev_x = x;
+			ts_dev->prev_y = y;
+
+			if (ts_dev->event_pending)
+				ts_dev->prev_z = z;
+			else	/* ignore first pen down event */
+				ts_dev->prev_z = MAX_12BIT;
 		}
+
 		irqclr |= IRQENB_FIFO0THRES;
+		ts_dev->event_pending = ts_dev->pen_down;
 	}
 	if (irqclr) {
 		titsc_writel(ts_dev, REG_IRQSTATUS, irqclr);

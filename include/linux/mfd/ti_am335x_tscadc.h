@@ -100,6 +100,7 @@
 #define STEPCHARGE_INM_MASK	(0xF << 15)
 #define STEPCHARGE_INM(val)	((val) << 15)
 #define STEPCHARGE_INM_AN1	STEPCHARGE_INM(1)
+#define STEPCHARGE_INM_AN2	STEPCHARGE_INM(2)
 #define STEPCHARGE_INP_MASK	(0xF << 19)
 #define STEPCHARGE_INP(val)	((val) << 19)
 #define STEPCHARGE_RFM_MASK	(3 << 23)
@@ -174,6 +175,8 @@ struct ti_tscadc_dev {
 
 	/* adc device */
 	struct adc_device *adc;
+
+	bool alt_pins_conf;
 };
 
 static inline struct ti_tscadc_dev *ti_tscadc_dev_get(struct platform_device *p)
