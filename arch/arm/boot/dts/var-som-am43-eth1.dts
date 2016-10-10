@@ -1,0 +1,58 @@
+/*
+ * Copyright (C) 2014 Variscite LTD - http://www.variscite.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/* VAR-SOM-AM43 */
+
+#include "var-som-am43.dtsi"
+
+&am43xx_pinmux {
+	cpsw_eth1_enable_default: cpsw_eth1_enable_default {
+		pinctrl-single,pins = <
+			/* Slave 2 reset value */
+			0x58 (PIN_OUTPUT_PULLDOWN | MUX_MODE2) /* gpmc_a6.rgmii2_tclk */
+			0x54 (PIN_OUTPUT_PULLDOWN | MUX_MODE2) /* gpmc_a5.rgmii2_td0 */
+			0x40 (PIN_OUTPUT_PULLDOWN | MUX_MODE2) /* gpmc_a0.rgmii2_tctl */ // shared with BT_EN
+			0x50 (PIN_OUTPUT_PULLDOWN | MUX_MODE2) /* gpmc_a4.rgmii2_td1 */
+			0x4c (PIN_OUTPUT_PULLDOWN | MUX_MODE2) /* gpmc_a3.rgmii2_td2 */
+			0x48 (PIN_OUTPUT_PULLDOWN | MUX_MODE2) /* gpmc_a2.rgmii2_td3 */
+			0x5c (PIN_INPUT_PULLDOWN | MUX_MODE2)  /* gpmc_a7.rgmii2_rclk */
+			0x44 (PIN_INPUT_PULLDOWN | MUX_MODE2)  /* gpmc_a1.rgmii2_rtcl */
+			0x6c (PIN_INPUT_PULLDOWN | MUX_MODE2)  /* gpmc_a11.rgmii2_rd0 */ // used for WL18xx: GPMC_A11/MCASP0_AXR1 COM_AUD_OUT
+			0x68 (PIN_INPUT_PULLDOWN | MUX_MODE2)  /* gpmc_a10.rgmii2_rd1 */ // used for WL18xx: GPMC_A10/MCASP0_AXR0 COM_AUD_IN
+			0x64 (PIN_INPUT_PULLDOWN | MUX_MODE2)  /* gpmc_a9.rgmii2_rd2 */ // used for WL18xx: GPMC_A9/MCASP0_FSX COM_AUD_FSYNC
+			0x60 (PIN_INPUT_PULLDOWN | MUX_MODE2)  /* gpmc_a8.rgmii2_rd3 */ // used for WL18xx: GPMC_A8/MCASP0_ACLKX COM_AUD_CLK
+		>;
+	};
+
+	cpsw_eth1_enable_sleep: cpsw_eth1_enable_sleep {
+		pinctrl-single,pins = <
+			/* Slave 2 reset value */
+			0x58 (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x54 (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x40 (PIN_INPUT_PULLDOWN | MUX_MODE7) 
+			0x50 (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x4c (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x48 (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x5c (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x44 (PIN_INPUT_PULLDOWN | MUX_MODE7)
+			0x6c (PIN_INPUT_PULLDOWN | MUX_MODE7) // used for WL18xx: GPMC_A11/MCASP0_AXR1 COM_AUD_OUT
+			0x68 (PIN_INPUT_PULLDOWN | MUX_MODE7) // used for WL18xx: GPMC_A10/MCASP0_AXR0 COM_AUD_IN
+			0x64 (PIN_INPUT_PULLDOWN | MUX_MODE7) // used for WL18xx: GPMC_A9/MCASP0_FSX    COM_AUD_FSYNC
+			0x60 (PIN_INPUT_PULLDOWN | MUX_MODE7) // used for WL18xx: GPMC_A8/MCASP0_ACLKX COM_AUD_CLK
+		>;
+	};
+};
+
+&mac {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cpsw_default &cpsw_eth1_enable_default>;
+	pinctrl-1 = <&cpsw_sleep &cpsw_eth1_enable_sleep>;
+	dual_emac = <1>;
+	status = "okay";
+};
+

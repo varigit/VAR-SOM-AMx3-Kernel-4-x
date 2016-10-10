@@ -1,0 +1,98 @@
+/*
+ * Copyright (C) 2014 Variscite LTD - http://www.variscite.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/* VAR-SOM-AM43 */
+
+#include "var-som-am43.dtsi"
+
+&am43xx_pinmux {
+	mmc3_pins_default: pinmux_mmc3_pins_default {
+		pinctrl-single,pins = <
+			0x8c (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_clk.mmc2_clk */
+			0x88 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_csn3.mmc2_cmd */
+			0x44 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_a1.mmc2_dat0 */
+			0x48 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_a2.mmc2_dat1 */
+			0x4c (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_a3.mmc2_dat2 */
+			0x78 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_be1n.mmc2_dat3 */
+		>;
+	};
+
+	mmc3_pins_sleep: pinmux_mmc3_pins_sleep {
+		pinctrl-single,pins = <
+			0x8c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_clk.mmc2_clk */
+			0x88 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_csn3.mmc2_cmd */
+			0x44 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a1.mmc2_dat0 */
+			0x48 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a2.mmc2_dat1 */
+			0x4c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a3.mmc2_dat2 */
+			0x78 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_be1n.mmc2_dat3 */
+		>;
+	};
+
+	wlan_pins_default: pinmux_wlan_pins_default {
+		pinctrl-single,pins = <
+			0x50 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)		/* gpmc_a4.gpio1_20 WL_EN */
+			0x5c (PIN_INPUT | WAKEUP_ENABLE | MUX_MODE7)	/* gpmc_a7.gpio1_23 WL_IRQ*/
+			0x40 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)		/* gpmc_a0.gpio1_16 BT_EN*/
+
+			0x6c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a11.rgmii2_rd0 */ // used for WL18xx: GPMC_A11/MCASP0_AXR1 COM_AUD_OUT
+			0x68 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a10.rgmii2_rd1 */ // used for WL18xx: GPMC_A10/MCASP0_AXR0 COM_AUD_IN
+			0x64 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a9.rgmii2_rd2 */ // used for WL18xx: GPMC_A9/MCASP0_FSX	COM_AUD_FSYNC
+			0x60 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a8.rgmii2_rd3 */ // used for WL18xx: GPMC_A8/MCASP0_ACLKX COM_AUD_CLK
+		>;
+	};
+
+	wlan_pins_sleep: pinmux_wlan_pins_sleep {
+		pinctrl-single,pins = <
+			0x50 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)		/* gpmc_a4.gpio1_20 WL_EN */
+			0x5c (PIN_INPUT | WAKEUP_ENABLE | MUX_MODE7)	/* gpmc_a7.gpio1_23 WL_IRQ*/
+			0x40 (PIN_OUTPUT_PULLUP | MUX_MODE7)		/* gpmc_a0.gpio1_16 BT_EN*/
+
+			0x6c (PIN_INPUT | MUX_MODE7)	/* gpmc_a11.rgmii2_rd0 - used for WL18xx: GPMC_A11/MCASP0_AXR1	COM_AUD_OUT */
+			0x68 (PIN_INPUT | MUX_MODE7)	/* gpmc_a10.rgmii2_rd1 - used for WL18xx: GPMC_A10/MCASP0_AXR0	COM_AUD_IN */
+			0x64 (PIN_INPUT | MUX_MODE7)	/* gpmc_a9.rgmii2_rd2 - used for WL18xx: GPMC_A9/MCASP0_FSX	COM_AUD_FSYNC */
+			0x60 (PIN_INPUT | MUX_MODE7)	/* gpmc_a8.rgmii2_rd3 - used for WL18xx: GPMC_A8/MCASP0_ACLKX	COM_AUD_CLK */
+		>;
+	};
+};
+
+&mac {
+	slaves = <1>;
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&cpsw_default>;
+	pinctrl-1 = <&cpsw_sleep>;
+	dual_emac = <1>;
+	status = "okay";
+};
+
+&mmc3 { /* WL8 */
+	status = "okay";
+	/* these are on the crossbar and are outlined in the
+	   xbar-event-map element */
+	dmas = <&edma 30
+		&edma 31>;
+	dma-names = "tx", "rx";
+	vmmc-supply = <&vmmcwl_fixed>;
+	bus-width = <4>;
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&mmc3_pins_default &wlan_pins_default>;
+	pinctrl-1 = <&mmc3_pins_sleep &wlan_pins_sleep>;
+	cap-power-off-card;
+	keep-power-in-suspend;	
+	ti,non-removable;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	wlcore: wlcore@0 {
+		compatible = "ti,wl1835";
+		reg = <2>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <23 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
+
+
