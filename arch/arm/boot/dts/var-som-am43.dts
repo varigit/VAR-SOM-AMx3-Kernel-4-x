@@ -13,23 +13,23 @@
 &am43xx_pinmux {
 	mmc3_pins_default: pinmux_mmc3_pins_default {
 		pinctrl-single,pins = <
-			0x8c (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_clk.mmc2_clk */
-			0x88 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_csn3.mmc2_cmd */
 			0x44 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_a1.mmc2_dat0 */
 			0x48 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_a2.mmc2_dat1 */
 			0x4c (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_a3.mmc2_dat2 */
 			0x78 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_be1n.mmc2_dat3 */
+			0x8c (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_clk.mmc2_clk */
+			0x88 (PIN_INPUT_PULLUP | MUX_MODE3)      /* gpmc_csn3.mmc2_cmd */
 		>;
 	};
 
 	mmc3_pins_sleep: pinmux_mmc3_pins_sleep {
 		pinctrl-single,pins = <
-			0x8c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_clk.mmc2_clk */
-			0x88 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_csn3.mmc2_cmd */
 			0x44 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a1.mmc2_dat0 */
 			0x48 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a2.mmc2_dat1 */
 			0x4c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a3.mmc2_dat2 */
 			0x78 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_be1n.mmc2_dat3 */
+			0x8c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_clk.mmc2_clk */
+			0x88 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_csn3.mmc2_cmd */
 		>;
 	};
 
@@ -38,11 +38,11 @@
 			0x50 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)		/* gpmc_a4.gpio1_20 WL_EN */
 			0x5c (PIN_INPUT | WAKEUP_ENABLE | MUX_MODE7)	/* gpmc_a7.gpio1_23 WL_IRQ*/
 			0x40 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)		/* gpmc_a0.gpio1_16 BT_EN*/
-
-			0x6c (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a11.rgmii2_rd0 */ // used for WL18xx: GPMC_A11/MCASP0_AXR1 COM_AUD_OUT
-			0x68 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a10.rgmii2_rd1 */ // used for WL18xx: GPMC_A10/MCASP0_AXR0 COM_AUD_IN
-			0x64 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a9.rgmii2_rd2 */ // used for WL18xx: GPMC_A9/MCASP0_FSX	COM_AUD_FSYNC
-			0x60 (PIN_INPUT_PULLDOWN | MUX_MODE7)	/* gpmc_a8.rgmii2_rd3 */ // used for WL18xx: GPMC_A8/MCASP0_ACLKX COM_AUD_CLK
+			
+			0x6c (PIN_INPUT_PULLDOWN | MUX_MODE7)   /* gpmc_a11.mcasp0_axr1 COM_AUD_OUT */
+			0x68 (PIN_INPUT_PULLDOWN | MUX_MODE7)   /* gpmc_a10.mcasp0_axr1 COM_AUD_IN  */
+			0x64 (PIN_INPUT_PULLDOWN | MUX_MODE7)   /* gpmc_a9.mcasp0_fsx   COM_AUD_FSYNC */
+			0x60 (PIN_INPUT_PULLDOWN | MUX_MODE7)   /* gpmc_a8.mcasp0_aclkx COM_AUD_CLK */		
 		>;
 	};
 
@@ -51,11 +51,11 @@
 			0x50 (PIN_OUTPUT_PULLDOWN | MUX_MODE7)		/* gpmc_a4.gpio1_20 WL_EN */
 			0x5c (PIN_INPUT | WAKEUP_ENABLE | MUX_MODE7)	/* gpmc_a7.gpio1_23 WL_IRQ*/
 			0x40 (PIN_OUTPUT_PULLUP | MUX_MODE7)		/* gpmc_a0.gpio1_16 BT_EN*/
-
-			0x6c (PIN_INPUT | MUX_MODE7)	/* gpmc_a11.rgmii2_rd0 - used for WL18xx: GPMC_A11/MCASP0_AXR1	COM_AUD_OUT */
-			0x68 (PIN_INPUT | MUX_MODE7)	/* gpmc_a10.rgmii2_rd1 - used for WL18xx: GPMC_A10/MCASP0_AXR0	COM_AUD_IN */
-			0x64 (PIN_INPUT | MUX_MODE7)	/* gpmc_a9.rgmii2_rd2 - used for WL18xx: GPMC_A9/MCASP0_FSX	COM_AUD_FSYNC */
-			0x60 (PIN_INPUT | MUX_MODE7)	/* gpmc_a8.rgmii2_rd3 - used for WL18xx: GPMC_A8/MCASP0_ACLKX	COM_AUD_CLK */
+						
+			0x6c (PIN_INPUT | MUX_MODE7)   /* gpmc_a11.mcasp0_axr1 COM_AUD_OUT */
+			0x68 (PIN_INPUT | MUX_MODE7)   /* gpmc_a10.mcasp0_axr1 COM_AUD_IN  */
+			0x64 (PIN_INPUT | MUX_MODE7)   /* gpmc_a9.mcasp0_fsx   COM_AUD_FSYNC */
+			0x60 (PIN_INPUT | MUX_MODE7)   /* gpmc_a8.mcasp0_aclkx COM_AUD_CLK */		
 		>;
 	};
 };
@@ -77,8 +77,8 @@
 	status = "okay";
 	/* these are on the crossbar and are outlined in the
 	   xbar-event-map element */
-	dmas = <&edma 30
-		&edma 31>;
+	dmas = <&edma_xbar 30 0 1>,
+		<&edma_xbar 31 0 2>;	
 	dma-names = "tx", "rx";
 	vmmc-supply = <&vmmcwl_fixed>;
 	bus-width = <4>;

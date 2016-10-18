@@ -874,11 +874,6 @@
 	cd-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 };
 
-&edma {
-	ti,edma-xbar-event-map = /bits/ 16 <1 30
-					    2 31>;
-};
-
 &uart2 {
 	status = "okay";
 	pinctrl-names = "default", "sleep";
