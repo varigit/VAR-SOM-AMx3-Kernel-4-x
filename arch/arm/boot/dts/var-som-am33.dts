@@ -700,7 +700,7 @@
 		};
 		partition@9 {
 			label = "NAND.file-system";
-			reg = <0x00A00000 0xffffffff>;
+			reg = <0x00A00000 0x1f600000>;
 		};
 	};
 };
