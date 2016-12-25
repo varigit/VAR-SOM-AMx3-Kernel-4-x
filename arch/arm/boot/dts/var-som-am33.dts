@@ -130,7 +130,7 @@
 			};
 		};
 	};
-
+#if 0
 	kim {
 		compatible = "kim";
  		nshutdown_gpio = <105>; /* Bank3, pin9 */
@@ -142,7 +142,7 @@
  	btwilink {
 		compatible = "btwilink";
 	};
- 	
+#endif
 };
 	
 &am33xx_pinmux {

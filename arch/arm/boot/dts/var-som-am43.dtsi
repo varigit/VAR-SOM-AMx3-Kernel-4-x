@@ -177,7 +177,7 @@
 			linux,default-trigger = "heartbeat";
 		};
 	};
-
+#if 0
 	kim {
 		compatible = "kim";
 		nshutdown_gpio = <48>; /* Bank1, pin16 */
@@ -189,6 +189,7 @@
 	btwilink {
 		compatible = "btwilink";
 	};
+#endif
 };
 
 &am43xx_pinmux {
