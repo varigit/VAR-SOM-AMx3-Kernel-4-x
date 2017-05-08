@@ -919,6 +919,9 @@
 		reg = <2>;
 		interrupt-parent = <&gpio3>;
 		interrupts = <20 IRQ_TYPE_LEVEL_HIGH>;
+
+                /* For WL12xx card set the clock to WL12XX_REFCLOCK_38_XTAL */
+                ref-clock-frequency = <38400000>;
 	};	
 };
 
